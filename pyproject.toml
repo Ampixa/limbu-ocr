@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ocr-tech"
+version = "0.1.0"
+description = "Hybrid Nepali + English OCR and document-structure extraction toolkit."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [
+  { name = "Ampixa" }
+]
+dependencies = []
+
+[project.optional-dependencies]
+datasets = [
+  "datasets>=3.0.0",
+  "h5py>=3.11.0",
+  "huggingface-hub>=0.25.0",
+  "pillow>=10.0.0"
+]
+eval = [
+  "pillow>=10.0.0",
+  "pymupdf>=1.24.0"
+]
+engines = [
+  "paddleocr>=3.0.0",
+  "pillow>=10.0.0"
+]
+surya = [
+  "surya-ocr>=0.20.0",
+  "pillow>=10.0.0"
+]
+hf-recognizer = [
+  "accelerate>=1.1.0",
+  "protobuf>=5.28.0",
+  "sentencepiece>=0.2.0",
+  "transformers>=4.57.0",
+  "torch>=2.5.0",
+  "pillow>=10.0.0"
+]
+vlm = [
+  "transformers>=4.50.0",
+  "torch>=2.5.0",
+  "pillow>=10.0.0"
+]
+dev = [
+  "pytest>=8.0.0"
+]
+
+[project.scripts]
+ocrtech = "ocrtech.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ocrtech = ["maps/*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,1091 @@
+{
+  "config_id": "nepal-language-pack-pipeline-v1",
+  "updated": "2026-07-15",
+  "description": "Language-pack-parameterized Paddle OCR pipeline registry: per-language script routing, converter, recognizer, and harvest state. Companion to RESEARCH.md sections 'The Paddle Pipeline' and 'Getting More Gorkhapatra Pages'.",
+  "pipeline_stages": [
+    "capture_prep",
+    "detection",
+    "script_routing",
+    "recognition",
+    "target_region_filtering",
+    "reading_order_assembly",
+    "export",
+    "eval_guardrail"
+  ],
+  "harvest_sources": {
+    "audit": "outputs/gorkhapatra-language-pages-full-2026-07-04/gorkhapatra-language-pages.json",
+    "inventory": "outputs/language-pack-inventory-full-2026-07-04/language-pack-inventory.json"
+  },
+  "script_recognizers": {
+    "limbu_sirijonga": {
+      "status": "champion",
+      "artifact": "runs/limbu-real-heavy-gork-cdc-replay-v1-lr1e6-8ep-normedit-g6-l4-ppocrv5-2026-06-23",
+      "dictionary": "data/dictionaries/limbu-sirijonga-v2.txt",
+      "input_width": 480,
+      "eval": "grapheme CER 0.041 real Gorkhapatra (frozen silver eval cp 0.011)"
+    },
+    "devanagari": {
+      "status": "operational_recovered_model_diagnostic_only",
+      "artifact": "spaces/limbu-ocr/models/deva-v2",
+      "dictionary": "spaces/limbu-ocr/models/deva-v2/artifacts/devanagari-v2.txt",
+      "writing_system_profile": "devanagari",
+      "route_script": "devanagari",
+      "source_unicode_status": "encoded",
+      "output_policy": "native_devanagari_unicode",
+      "eval": "The recovered deva-v2 export and its 143-symbol dictionary are locally runnable and exact-hash audited for diagnostic OCR. Its historical Newari scores and recovered Gorkhapatra evaluation pack are not claim evidence: source rights/provenance, native pixel-label review, leakage, and split-independence gates fail. No current Newari CER is admitted."
+    },
+    "sunuwar_jenticha": {
+      "status": "historical_artifacts_missing_legal_block",
+      "artifact": null,
+      "dictionary": "data/dictionaries/sunuwar-v1.txt",
+      "eval": "Historical cp=graph CER 0.121 on Sikkim Herald crops; the 429-row pack and checkpoint are absent, and source redistribution permission is unresolved."
+    },
+    "kiratrai": {
+      "status": "data_only_leaked_eval",
+      "artifact": null,
+      "dictionary": "data/dictionaries/kiratrai-v1.txt",
+      "eval": "70 rows / 53 unique labels; all 53 unique eval labels occur in the real-render training labels, and no checkpoint is present. Not a held-out eval."
+    },
+    "newa_prachalit": {
+      "status": "operational_recovered_model_diagnostic_failed_fit_only",
+      "artifact": "spaces/limbu-ocr/models/newa-prachalit-v1",
+      "dictionary": "spaces/limbu-ocr/models/newa-prachalit-v1/artifacts/newa-native-v1.txt",
+      "writing_system_profile": "newa_prachalit",
+      "route_script": "newa",
+      "source_unicode_status": "encoded",
+      "output_policy": "native_newa_unicode",
+      "eval": "The exact native-v1 checkpoint has a CPU-exported diagnostic model with a 106-symbol Newa dictionary and one network-denied CPU runtime smoke on an OFL-font synthetic line. The original model is a known failed fit: its PPLCNetV3 path was capped at 40 CTC timesteps while 95.7% of training labels exceeded 40 characters. The smoke performed no output-to-source comparison or scoring, so no codepoint CER or quality result is admitted; the 635-row Cambridge claim-eval manuscript remains native-review pending. The isolated CTC200 retrain stays approval-gated.",
+      "focus_note": "Newar is focus language 2 (steer 2026-07-04); this profile covers encoded Newar/Prachalit only"
+    },
+    "newa_bhujimol": {
+      "status": "profile_registered_no_model_font_or_admitted_dataset",
+      "artifact": null,
+      "dictionary": "data/dictionaries/newa-native-v1.txt",
+      "writing_system_profile": "bhujimol",
+      "route_script": "bhujimol",
+      "source_unicode_status": "no_separate_script_encoding",
+      "output_policy": "newa_unicode_transcription_with_source_style_metadata",
+      "eval": "One CC0 111-path basic-glyph vector chart is audited for reviewer reference only; it is not a font and has no explicit machine-readable codepoint mapping or shaping rules. No admitted Bhujimol manuscript pixels, labels, font, checkpoint, or real-domain CER. Newa codepoint transcription does not make the Prachalit visual model valid for Bhujimol."
+    },
+    "newa_ranjana": {
+      "status": "image_profile_registered_unencoded_no_model_or_admitted_dataset",
+      "artifact": null,
+      "dictionary": "data/dictionaries/newa-native-v1.txt",
+      "writing_system_profile": "ranjana",
+      "route_script": "ranjana",
+      "source_unicode_status": "unencoded",
+      "output_policy": "newa_unicode_transcription_with_source_image_and_ranjana_style_metadata",
+      "eval": "Ranjana is unencoded in Unicode 17.0. The exact official Nithya Ranjana 1.000 DU and NU fonts are OFL-1.1 mapping-audited reference assets: DU maps Devanagari; NU maps Newa and is the compatible render candidate. No admitted real pixels, labels, checkpoint, or real-domain CER; no synthetic training payload is admitted."
+    },
+    "tirhuta": {
+      "status": "data_candidate_no_model",
+      "artifact": null,
+      "dictionary": "data/dictionaries/tirhuta-v1.txt",
+      "eval": "Issue 001 has 400 unreviewed real eval candidates; April 2008 has 1,999 leakage-filtered training rows. No current checkpoint, reviewed freeze, or real-domain CER exists."
+    },
+    "lepcha": {
+      "status": "data_only_unfrozen",
+      "artifact": null,
+      "dictionary": "data/dictionaries/lepcha-v1.txt",
+      "eval": "132 rows / 107 unique machine-converted labels; no canonical manifest/summary, source PDFs, or checkpoint are present. Split independence and native review are unresolved."
+    },
+    "gurung_khema": {
+      "status": "data_only_synthetic_by_nature",
+      "artifact": null,
+      "dictionary": "data/dictionaries/gurungkhema-v1.txt",
+      "eval": "no real print exists (revival script)"
+    },
+    "tibetan": {
+      "status": "unstarted",
+      "artifact": null,
+      "dictionary": null,
+      "eval": "Gorkhapatra Tibetan-script pages are visual-only (verified 2026-07-04)"
+    },
+    "ol_chiki": {
+      "status": "data_candidate_no_model",
+      "artifact": null,
+      "dictionary": "data/dictionaries/olchiki-v1.txt",
+      "eval": "358-row nonblank real-print candidate and fail-closed review freezer exist; native decisions, frozen pack, independent leakage/asset attestations, checkpoint, and current CER are absent."
+    },
+    "devanagari_limbu": {
+      "status": "trained",
+      "artifact": "runs/limbu-devanagari-cdc-ppocrv5-mobile-training-bundle-2026-06-21",
+      "dictionary": "data/dictionaries/devanagari-v1.txt",
+      "eval": "CDC Devanagari-Limbu book path"
+    },
+    "perso_arabic": {
+      "status": "unstarted",
+      "artifact": null,
+      "dictionary": null,
+      "eval": "Urdu pages; script/text-layer class unverified"
+    }
+  },
+  "languages": [
+    {
+      "label": "खश जुम्ली",
+      "aliases_seen": [
+        "खश जुम्ली"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 6,
+        "page_hits": 13,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "अवधी",
+      "aliases_seen": [
+        "अवधी"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 5,
+        "page_hits": 12,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "थामी",
+      "aliases_seen": [
+        "थामी"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 6,
+        "page_hits": 12,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "राजवंशी",
+      "aliases_seen": [
+        "राजवंशी"
+      ],
+      "registry_id": "rajbanshi",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 6,
+        "page_hits": 12,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "ल्होमी",
+      "aliases_seen": [
+        "ल्होमी"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 6,
+        "page_hits": 12,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "ताजपुरिया",
+      "aliases_seen": [
+        "ताजपुरिया"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 5,
+        "page_hits": 11,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "किसान",
+      "aliases_seen": [
+        "किसान"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 10,
+        "aligned": 5,
+        "page_hits": 10,
+        "unique_dates": 10
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "माझी",
+      "aliases_seen": [
+        "माझी"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 10,
+        "aligned": 5,
+        "page_hits": 10,
+        "unique_dates": 10
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "सुनुवार",
+      "aliases_seen": [
+        "सुनुवार"
+      ],
+      "registry_id": "sunuwar",
+      "primary_script": "devanagari",
+      "secondary_script": "sunuwar_jenticha",
+      "text_layer_class": "legacy_font_nayanepal_devanagari (verified render 2082-10-16; native Jenticha chart box present)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal')",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 10,
+        "aligned": 5,
+        "page_hits": 10,
+        "unique_dates": 10
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "कुमाल",
+      "aliases_seen": [
+        "कुमाल"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 5,
+        "page_hits": 10,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "थारु",
+      "aliases_seen": [
+        "थारु",
+        "थारू"
+      ],
+      "registry_id": "rana-tharu",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 5,
+        "page_hits": 10,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "बज्जिका",
+      "aliases_seen": [
+        "बज्जिका"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 5,
+        "page_hits": 10,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "बान्तावा",
+      "aliases_seen": [
+        "बान्तावा"
+      ],
+      "registry_id": "bantawa",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 5,
+        "page_hits": 10,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "बाहिङ",
+      "aliases_seen": [
+        "बाहिङ"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 5,
+        "page_hits": 10,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "मुगाल",
+      "aliases_seen": [
+        "मुगाल"
+      ],
+      "registry_id": null,
+      "primary_script": "tibetan",
+      "secondary_script": null,
+      "text_layer_class": "tibetan_script_visual_only (verified sample 2026-06-24/0012)",
+      "converter": null,
+      "recognizer_ref": "tibetan",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 5,
+        "page_hits": 10,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "ह्योल्मो",
+      "aliases_seen": [
+        "ह्योलमो",
+        "ह्योल्मो"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 5,
+        "page_hits": 10,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "मारवाडी",
+      "aliases_seen": [
+        "मारवाडी"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 10,
+        "aligned": 5,
+        "page_hits": 9,
+        "unique_dates": 10
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "दनुवार",
+      "aliases_seen": [
+        "दनुवार"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 5,
+        "page_hits": 9,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "धिमाल",
+      "aliases_seen": [
+        "धिमाल"
+      ],
+      "registry_id": "dhimal",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 4,
+        "page_hits": 9,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "भोजपुरी",
+      "aliases_seen": [
+        "भोजपुरी"
+      ],
+      "registry_id": "bhojpuri",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 10,
+        "aligned": 4,
+        "page_hits": 8,
+        "unique_dates": 10
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "उराँव",
+      "aliases_seen": [
+        "उराँव"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 4,
+        "page_hits": 8,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "लिम्बु",
+      "aliases_seen": [
+        "लिम्बू"
+      ],
+      "registry_id": "limbu",
+      "primary_script": "limbu_sirijonga",
+      "secondary_script": "devanagari_limbu",
+      "text_layer_class": "legacy_font_namdhinggo (verified)",
+      "converter": "nepal_ttf2utf limbu / src/ocrtech/limbu_legacy.py + data/mappings/limbu-legacy/Limbu.map",
+      "recognizer_ref": "limbu_sirijonga",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 4,
+        "page_hits": 8,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "गुरुङ",
+      "aliases_seen": [
+        "गुरुङ"
+      ],
+      "registry_id": "gurung",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 4,
+        "page_hits": 8,
+        "unique_dates": 8
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "तामाङ",
+      "aliases_seen": [
+        "तामाङ"
+      ],
+      "registry_id": "tamang",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 4,
+        "page_hits": 8,
+        "unique_dates": 8
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "मगही",
+      "aliases_seen": [
+        "मगही"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 4,
+        "page_hits": 8,
+        "unique_dates": 8
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "वाम्बुले",
+      "aliases_seen": [
+        "वाम्बुले"
+      ],
+      "registry_id": "wambule",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 4,
+        "page_hits": 8,
+        "unique_dates": 8
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "कुलुङ",
+      "aliases_seen": [
+        "कुलुङ"
+      ],
+      "registry_id": "kulung",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 7,
+        "aligned": 4,
+        "page_hits": 8,
+        "unique_dates": 7
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "राना थारु",
+      "aliases_seen": [
+        "राना थारु"
+      ],
+      "registry_id": "rana-tharu",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 7,
+        "aligned": 4,
+        "page_hits": 8,
+        "unique_dates": 7
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "चेपाङ",
+      "aliases_seen": [
+        "चेपाङ"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 3,
+        "page_hits": 7,
+        "unique_dates": 8
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "बराम",
+      "aliases_seen": [
+        "बराम"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 10,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 10
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "चाम्लिङ राई",
+      "aliases_seen": [
+        "चाम्लिङ",
+        "चाम्लिङ राई"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "डोट्याली",
+      "aliases_seen": [
+        "डोट्याली"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "बझाङी",
+      "aliases_seen": [
+        "बझाङी"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "मगर",
+      "aliases_seen": [
+        "मगर"
+      ],
+      "registry_id": "magar",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 9,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 9
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "अछामि",
+      "aliases_seen": [
+        "अछामि"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 4,
+        "page_hits": 6,
+        "unique_dates": 8
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "जिरेल",
+      "aliases_seen": [
+        "जिरेल"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 8
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "दराई",
+      "aliases_seen": [
+        "दराई"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 8
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "नेपाल",
+      "aliases_seen": [
+        "नेपाल"
+      ],
+      "registry_id": "newar",
+      "primary_script": "devanagari",
+      "secondary_script": "newa_prachalit",
+      "script_recognizer_refs": [
+        "devanagari",
+        "newa_prachalit",
+        "newa_bhujimol",
+        "newa_ranjana"
+      ],
+      "writing_system_profiles": [
+        "newa_prachalit",
+        "bhujimol",
+        "ranjana",
+        "devanagari"
+      ],
+      "text_layer_class": "legacy_font_nayanepal_devanagari (verified via silver run 2026-07-04: 6,800 kept lines)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 8
+      },
+      "status": "focus_language_2_pending_frozen_split"
+    },
+    {
+      "label": "भोटे",
+      "aliases_seen": [
+        "भोटे"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 8
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "मैथिली",
+      "aliases_seen": [
+        "मैथिली"
+      ],
+      "registry_id": "maithili",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 8
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "संस्कृत",
+      "aliases_seen": [
+        "संस्कृत"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 8
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "डडेल्धुरेली",
+      "aliases_seen": [
+        "डडेल्धुरेली"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 7,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 7
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "मेचे",
+      "aliases_seen": [
+        "मेचे"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 7,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 7
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "याक्खा",
+      "aliases_seen": [
+        "याक्ख",
+        "याक्खा"
+      ],
+      "registry_id": "yakkha",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 7,
+        "aligned": 3,
+        "page_hits": 6,
+        "unique_dates": 7
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "शेर्पा",
+      "aliases_seen": [
+        "शेर्पा"
+      ],
+      "registry_id": "sherpa",
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 5,
+        "aligned": 3,
+        "page_hits": 5,
+        "unique_dates": 5
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "बोटे",
+      "aliases_seen": [
+        "बोटे"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 2,
+        "aligned": 2,
+        "page_hits": 5,
+        "unique_dates": 2
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "सन्थाली",
+      "aliases_seen": [
+        "सन्थाली"
+      ],
+      "registry_id": "santhali",
+      "primary_script": "ol_chiki",
+      "secondary_script": null,
+      "text_layer_class": "unclassified_pending_extraction",
+      "converter": null,
+      "recognizer_ref": "ol_chiki",
+      "harvest_2026_07_04": {
+        "items": 2,
+        "aligned": 2,
+        "page_hits": 5,
+        "unique_dates": 2
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "हायु",
+      "aliases_seen": [
+        "हायु"
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 2,
+        "aligned": 2,
+        "page_hits": 5,
+        "unique_dates": 2
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": "उर्दू",
+      "aliases_seen": [
+        "उर्दू"
+      ],
+      "registry_id": null,
+      "primary_script": "perso_arabic",
+      "secondary_script": null,
+      "text_layer_class": "unclassified_pending_extraction (Perso-Arabic expected, nayanepal impossible)",
+      "converter": null,
+      "recognizer_ref": "perso_arabic",
+      "harvest_2026_07_04": {
+        "items": 8,
+        "aligned": 2,
+        "page_hits": 4,
+        "unique_dates": 8
+      },
+      "status": "harvested_pending_silver_pack"
+    },
+    {
+      "label": null,
+      "aliases_seen": [
+        null
+      ],
+      "registry_id": null,
+      "primary_script": "devanagari",
+      "secondary_script": null,
+      "text_layer_class": "expected_legacy_font_nayanepal (pending per-page extraction)",
+      "converter": "nepal_ttf2utf convert_devanagari(font='nayanepal') (pending validation on this language's pages)",
+      "recognizer_ref": "devanagari",
+      "harvest_2026_07_04": {
+        "items": 1,
+        "aligned": 1,
+        "page_hits": 2,
+        "unique_dates": 1
+      },
+      "status": "harvested_pending_silver_pack"
+    }
+  ]
+}

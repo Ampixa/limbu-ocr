@@ -1,0 +1,45 @@
+{
+  "model_id": "limbu-sirijonga-ft-v2-best",
+  "backend": "paddleocr",
+  "base_model": "PP-OCRv5_mobile_rec_pretrained (generic; champion training checkpoint lost 2026-07-04)",
+  "created_at_utc": "2026-07-06T07:19:31.363403+00:00",
+  "artifacts": [
+    {
+      "path": "artifacts/inference.json",
+      "required": true,
+      "sha256": "0b5ca684a4e1acc77bad0af537670800f21923e69ea1a79cfb899f25dd54f0eb",
+      "kind": "file",
+      "size_bytes": 217706
+    },
+    {
+      "path": "artifacts/inference.pdiparams",
+      "required": true,
+      "sha256": "97ae5d8121ea4a05de8ac0c98460df9bb66f2965d507da83ed9de5324baf3971",
+      "kind": "file",
+      "size_bytes": 7605333
+    },
+    {
+      "path": "artifacts/inference.yml",
+      "required": true,
+      "sha256": "8701ae3c6d1586bf8db570a009374cf88d94bb3bf733c665e03146aee2b854c9",
+      "kind": "file",
+      "size_bytes": 1443
+    },
+    {
+      "path": "artifacts/limbu-sirijonga-v2.txt",
+      "required": true,
+      "sha256": "a708e4e6c74ac17097a2c8fe24e3f3fd057482969959f5f17950150523693d7d",
+      "kind": "file",
+      "size_bytes": 316
+    }
+  ],
+  "backend_kwargs": {
+    "lang": "limbu-sirijonga",
+    "text_recognition_model_name": "PP-OCRv5_mobile_rec",
+    "text_recognition_model_dir": "artifacts",
+    "recognition_mode": "line"
+  },
+  "provenance": {},
+  "metrics": {},
+  "notes": "ft-v2 2026-07-06: trained on rebuilt 2x corpus (46,753 rows, real x8 replay), frozen 902-line test cp CER 0.0047 / grapheme 0.0098 / exact 0.859 vs prior champion 0.0138/0.0284/0.637; page-eval-v2 end-to-end 0.0272 cp (prior 0.043). Silver labels, diagnostic. Run artifacts: outputs/limbu-ft-v2-run-2026-07-06 + HF ampixa/ocr-tech-artifacts."
+}

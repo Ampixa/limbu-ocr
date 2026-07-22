@@ -1,0 +1,45 @@
+{
+  "model_id": "deva-v2-reexport-2026-07-06",
+  "backend": "paddleocr",
+  "base_model": "deva-v2 training checkpoint (recovered from ashish-experiments 2026-07-05)",
+  "created_at_utc": "2026-07-06T07:52:10.588624+00:00",
+  "artifacts": [
+    {
+      "path": "artifacts/inference.json",
+      "required": true,
+      "sha256": "772e801de4c1cc260058f7c426ab618ef52ecc7ea51442886c8c8fc1606cb88b",
+      "kind": "file",
+      "size_bytes": 217712
+    },
+    {
+      "path": "artifacts/inference.pdiparams",
+      "required": true,
+      "sha256": "32f5256f8a062830be4394606b8307c30dd9b9fb1be4e15af65606abffb479b4",
+      "kind": "file",
+      "size_bytes": 7630503
+    },
+    {
+      "path": "artifacts/inference.yml",
+      "required": true,
+      "sha256": "4f76c7bd21ea18ec118adef93b98017b55a449072b35f1c3ea2baa3df217c8dc",
+      "kind": "file",
+      "size_bytes": 1812
+    },
+    {
+      "path": "artifacts/devanagari-v2.txt",
+      "required": true,
+      "sha256": "96806153df021c99b0195de9757d8fe6443c52f7c8a1c74bf76a5895c37b8c0b",
+      "kind": "file",
+      "size_bytes": 467
+    }
+  ],
+  "backend_kwargs": {
+    "lang": "devanagari",
+    "text_recognition_model_name": "PP-OCRv5_mobile_rec",
+    "text_recognition_model_dir": "artifacts",
+    "recognition_mode": "line"
+  },
+  "provenance": {},
+  "metrics": {},
+  "notes": "Re-export of the recovered deva-v2 training checkpoint with the correct 144-char devanagari-v2 dict; replaces the broken limbu-devanagari-ppocrv5 bundle whose truncated dict lacked anusvara/ii-matra/nna and emitted garbage. Verified on the recovered Newar frozen test: cp CER 0.0622 / grapheme 0.1312 / exact 0.158 - exact match to the recorded pre-crash baseline. Silver labels, diagnostic."
+}

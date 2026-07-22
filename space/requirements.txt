@@ -1,0 +1,8 @@
+gradio==5.49.1
+pillow>=10.0.0
+numpy>=1.26.0,<2.3
+opencv-python-headless>=4.10.0.84,<4.13
+pypdfium2>=4.30.0,<5
+paddlepaddle==3.3.1
+paddleocr==3.7.0
+ultralytics==8.3.0
