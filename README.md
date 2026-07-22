@@ -93,7 +93,7 @@ in the relevant Unicode proposals.
   author = {Thapa, Ashish},
   year   = {2026},
   note   = {Ampixa Labs},
-  url    = {https://github.com/voidash/limbu-ocr}
+  url    = {https://github.com/ampixa/limbu-ocr}
 }
 ```
 
