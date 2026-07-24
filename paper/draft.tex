@@ -154,84 +154,34 @@ Devanagari-written Limbu evaluation remain open.
 
 \subsection{1. Introduction}\label{introduction}
 
-The practical test for this project is straightforward. Someone should
-be able to hand LimbuOCR a scanned book, photographed pages, or a PDF
-and receive editable Unicode text. When the system is unsure, the editor
-should be able to find the source line and correct it without
-reconstructing the OCR run. Meeting that test requires much more than a
-low error rate on pre-cropped lines: the output has to retain page
-boundaries, reading order, line boxes, crops, confidence, script
-decisions, and source identity, and weak detections must remain visible
-for review.
+Someone should be able to hand LimbuOCR a scanned book, photographed
+pages, or a PDF and receive editable Unicode text---and, when the system
+is unsure, find the source line and correct it without reconstructing
+the OCR run. That requires more than low error on pre-cropped lines: the
+output must keep page boundaries, reading order, line boxes, crops,
+confidence, script decisions, and source identity, with weak detections
+visible for review. LimbuOCR covers that path today: it detects lines,
+routes Sirijonga and Devanagari crops, restores reading order, writes
+editable and structured outputs, and ties reviewer decisions to source
+crops. One data-side technique needs separating from the runtime: some
+newspaper PDFs draw Sirijonga with Namdhinggo legacy fonts whose stored
+codes can be mapped to Unicode and aligned with pixels from the same
+page. That is how scarce real-print training pairs were constructed; the
+deployed recognizer itself reads pixels, never a PDF text layer.
 
-LimbuOCR now covers that path. It accepts PDFs and image batches,
-detects lines, routes Sirijonga and Devanagari crops, restores reading
-order, and writes editable and structured outputs. Reviewer decisions
-remain tied to the source crops, and only accepted corrections can enter
-a later training export. We evaluate the Sirijonga recognizer both on
-cropped lines and through the full page path, so detection and ordering
-errors remain part of the result.
-
-One part of the data pipeline needs careful separation from the runtime
-system. Some newspaper PDFs display Sirijonga with Namdhinggo-family
-legacy fonts. Their stored character codes can be mapped to Unicode and
-aligned with line images rendered from the same page. This gives us
-scarce real-print training material, but it is a way of constructing
-evidence, not the inference method: the deployed recognizer starts from
-pixels and does not read a PDF text layer.
-
-Limbu also previews the problems a broader OCR effort in Nepal will
-face. It appears in two visually different writing systems; available
-sources mix Unicode, legacy encodings, and cross-script transcription;
-and its newspaper pages add multiple columns and page furniture under
-low-resource constraints. We have parameterized the reusable
-parts---detection, routing, assembly, export, and review---through a
-50-language registry and run the same source workflow across a wider
-newspaper archive. Section 10 reports what that produced and which
-artifacts are deliberately not yet used. The measured subject of this
-paper remains Limbu.
-
-The paper makes five contributions:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  \textbf{An operational Limbu book-OCR research prototype} connecting
-  page/PDF intake, preparation, detection, script routing, recognition,
-  reading order, editable export, and review in one auditable system.
-\item
-  \textbf{A real-print Sirijonga data path with provenance}, recovering
-  4,872 line pairs from 16 same-PDF page/text sources under a
-  date-grouped, exact-label-leakage-filtered split.
-\item
-  \textbf{Line and page diagnostics on a date-disjoint silver test},
-  comparing ft-v2 with the previous deployment on 902 lines and through
-  complete held-out pages---including the demonstration that page CER is
-  meaningful only under a declared serialization: the same predictions
-  score 41.34\% or 4.329\% depending on the reading-order contract.
-\item
-  \textbf{A testable boundary for two-writing-system support}: a
-  source-pixel audit rejects a mislabeled Devanagari OCR result and
-  specifies the evidence a genuine Devanagari-written Limbu benchmark
-  needs.
-\item
-  \textbf{A transferable language-pack pipeline}: the same pixel/text
-  pairing, legacy-font conversion, and leakage-checked staging executed
-  across the Nepal pack, yielding per-script real-print data, one
-  diagnostic second-language recognizer, and two root-caused negative
-  results, each reported with its current review status.
-\end{enumerate}
-
-Four research questions organize the work: whether same-PDF pixels and
-legacy text layers can bootstrap Sirijonga recognition when
-transcription is scarce (RQ1); which page components dominate end-to-end
-error once line recognition is strong (RQ2); how a system should
-distinguish source script, language, transcription encoding, and support
-maturity (RQ3); and whether crop-linked review can reduce the time to a
-corrected book (RQ4). The experiments answer RQ1 and RQ2 in preliminary
-form, Section 8 answers RQ3 operationally, and RQ4 still needs a study
-with fluent reviewers.
+Concretely, this paper contributes: (1) an operational page-to-book
+Limbu OCR prototype; (2) a provenance-preserving real-print data
+path---4,872 line pairs from 16 same-PDF sources under a date-grouped,
+leakage-filtered split; (3) date-disjoint line and page diagnostics for
+the ft-v2 recognizer, including the demonstration that page CER is
+meaningful only under a declared serialization (the same predictions
+score 41.34\% or 4.329\% depending on the reading-order contract); (4) a
+tested boundary for two-writing-system support, built on a source-pixel
+audit that rejected a mislabeled Devanagari result; and (5) the same
+pipeline executed across the Nepal language pack, yielding per-script
+real-print data, one diagnostic second-language recognizer, and two
+root-caused negative results, each reported with its review status
+(Section 10). The measured subject remains Limbu.
 
 \subsection{2. Limbu OCR as a System
 Problem}\label{limbu-ocr-as-a-system-problem}
@@ -239,63 +189,50 @@ Problem}\label{limbu-ocr-as-a-system-problem}
 Project sources use both Limbu and Yakthung for the language, and both
 Sirijonga and Devanagari for its written form; Unicode assigns the Limbu
 script U+1900--U+194F (Unicode Consortium 2025a). An OCR record
-therefore needs at least three separate fields: the \textbf{language}
-(Limbu), the \textbf{visual writing system} on the page (Sirijonga or
-Devanagari), and the \textbf{transcription encoding} of the desired
-output. A Sirijonga page paired with a Devanagari transcription is a
-valid cross-script transcription task, but it says nothing about
-recognizing Devanagari glyphs, and it changes the dictionary,
-recognition head, fonts, and error analysis. Historical PDFs add one
-more layer: a page may look like Sirijonga while its text layer stores
-Latin or private codes rendered through an embedded font. A known font
-map converts those codes into useful silver labels; the visible script
-is still Sirijonga, and the deployed model still reads pixels.
+therefore needs three separate fields: the \textbf{language}, the
+\textbf{visual writing system} on the page, and the
+\textbf{transcription encoding} of the output. A Sirijonga page paired
+with a Devanagari transcription is a valid cross-script transcription
+task, but it says nothing about recognizing Devanagari glyphs, and it
+changes the dictionary, recognition head, fonts, and error analysis. A
+page may also look like Sirijonga while its text layer stores Latin or
+private codes rendered through an embedded font: a known font map
+converts those codes into useful silver labels, but the visible script
+is unchanged and the model still reads pixels.
 
-We describe support with four levels---\textbf{runtime} (a model loads
-and emits text), \textbf{operational} (the page/book workflow emits
-reviewable artifacts), \textbf{measured} (quality is evaluated on
-relevant real pixels), and \textbf{claim-grade} (frozen, rights-cleared,
-human-reviewed evaluation). Sirijonga is measured on date-disjoint
-silver diagnostics; the Devanagari route is merely operational; neither
-is claim-grade. This vocabulary keeps ``supported'' from doing too much
-work.
-
-Two evaluation choices follow throughout: we score machine-converted
-silver without calling it human ground truth, and we make source
-grouping, leakage checks, normalization, missing predictions, and
-reading order part of the metric definition rather than prose caveats.
+We describe support in four levels---runtime (a model loads),
+operational (the workflow emits reviewable artifacts), measured (quality
+is evaluated on relevant real pixels), and claim-grade (frozen,
+rights-cleared, human-reviewed evaluation). Sirijonga is measured on
+date-disjoint silver diagnostics; the Devanagari route is merely
+operational; neither is claim-grade. Throughout, machine-converted
+silver is scored without being called ground truth, and source grouping,
+leakage checks, normalization, and reading order are part of the metric
+definition.
 
 \subsection{3. Related Work}\label{related-work}
 
-Tesseract remains the reference example of segmentation and recognition
-in a deployable engine (Smith 2007); LimbuOCR builds on PaddleOCR, whose
-PP-OCR family combines lightweight backbones, sequence modeling, and
-deployable recognition heads (Li et al. 2022; Cui et al. 2025). The
-recognizer measured here is the PP-OCRv5 mobile model (PPLCNetV3
-backbone, SVTR neck, CTC/NRTR heads); CTC enables sequence recognition
-without character-level alignment (Graves et al. 2006) but does not
-solve layout, which is why we keep line CER, detection F1, matched-line
-recognition, and full-page CER separate. For low-resource scripts,
-fonts, standardized text, rights, and representative evaluation
+LimbuOCR builds on PaddleOCR's PP-OCR family of deployable detectors and
+recognizers (Li et al. 2022; Cui et al. 2025); the measured recognizer
+is the PP-OCRv5 mobile model (PPLCNetV3 backbone, SVTR neck, CTC/NRTR
+heads), with Tesseract as the classical single-engine reference point
+(Smith 2007). CTC removes character-level alignment (Graves et al. 2006)
+but not layout, which is why line CER, detection F1, matched-line
+recognition, and full-page CER stay separate here. For low-resource
+scripts, fonts, standardized text, rights, and representative evaluation
 constrain progress at least as much as model size (Agarwal and
-Anastasopoulos 2024); synthetic rendering and glyph-centered contrastive
-learning broaden coverage (Sharma et al. 2024) without establishing
-real-page performance, which matches our ablation experience (Section
-8.1).
-
-We report NFC codepoint CER and extended-grapheme-cluster CER under the
-Unicode segmentation model (Unicode Consortium 2025b) because Limbu
-combining signs split perceived characters across codepoints. Datasets
-and models are treated as evidence objects in the sense of datasheets
-(Gebru et al. 2021) and model cards (Mitchell et al. 2019).
-Community-centered work on Yakthung digital heritage frames script
-support as part of community-controlled tooling (Limbu 2024); our
-focused search found no peer-reviewed public Sirijonga page-to-book
-benchmark with comparable reporting, so we describe ft-v2 as an internal
-silver baseline without a priority claim. The closest systems precedent
-is the historical-document platform tradition of Transkribus (Mühlberger
-et al. 2019) and postediting research on transparent, human-controlled
-suggestions (Poncelas et al. 2020).
+Anastasopoulos 2024), and synthetic rendering broadens coverage without
+establishing real-page performance (Sharma et al. 2024)---consistent
+with our ablations (Section 8.1). We report NFC codepoint and
+extended-grapheme CER (Unicode Consortium 2025b), treat datasets and
+models as documented evidence objects (Gebru et al. 2021; Mitchell et
+al. 2019), and follow the human-in-the-loop platform tradition of
+Transkribus (Mühlberger et al. 2019) and postediting research (Poncelas
+et al. 2020). Community-centered work on Yakthung digital heritage
+frames script support as community-controlled tooling (Limbu 2024); we
+found no peer-reviewed public Sirijonga page-to-book benchmark with
+comparable reporting, so ft-v2 is described as an internal silver
+baseline without a priority claim.
 
 \subsection{4. The LimbuOCR Platform}\label{the-limbuocr-platform}
 
@@ -309,7 +246,7 @@ crops, connect the two.
 
 \begin{figure}
 \centering
-\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio]{figures/system-architecture.png}
+\includegraphics[width=0.88\linewidth,height=\textheight,keepaspectratio]{figures/system-architecture.png}
 \caption{LimbuOCR system architecture. The upper path constructs and
 validates evidence and model bundles; the lower path performs
 page-to-book OCR. Review decisions remain attached to source crops and
@@ -382,16 +319,16 @@ evidence.
 \subsubsection{5.2 Grouped splitting and leakage
 control}\label{grouped-splitting-and-leakage-control}
 
-The rebuilt collection contains 4,872 non-empty line pairs from 16
-publication dates. Every line from a date stays in one split: after
-sorting the dates, indices congruent to 2 modulo 5 form the test split
-(2082-03-24, 2082-08-12, 2082-12-25), indices congruent to 0 form
-development, and the rest form training. Removing the 38 normalized
-labels that repeat across split boundaries leaves 4,834 lines: 2,711
-training (nine dates), 1,221 development (four dates), and 902 test
-(three dates). Date grouping stops same-edition leakage and label
-filtering catches repeated boilerplate; near-duplicate phrases and
-shared page templates may remain.
+The rebuilt collection contains 4,872 line pairs from 16 publication
+dates. Every line from a date stays in one split: after sorting the
+dates, indices congruent to 2 modulo 5 form the test split (2082-03-24,
+2082-08-12, 2082-12-25), indices congruent to 0 form development, and
+the rest form training. Removing the 38 normalized labels that repeat
+across split boundaries leaves 4,834 lines: 2,711 training (nine dates),
+1,221 development (four dates), and 902 test (three dates). Date
+grouping stops same-edition leakage and label filtering catches repeated
+boilerplate; near-duplicate phrases and shared page templates may
+remain.
 
 \subsubsection{5.3 Training mixture}\label{training-mixture}
 
@@ -479,11 +416,10 @@ The 902 test lines contain 34,814 codepoints and 16,760 grapheme
 clusters. ft-v2 cuts codepoint CER by 65.625\% and grapheme CER by
 65.55\%; exact-line accuracy gains 22.17 percentage points. This
 measures agreement with the same-PDF silver layer, not with a fluent
-transcription. For RQ1, same-source pairing with date grouping,
-real-line replay, and a fixed dictionary yields a useful internal
-baseline where transcription is scarce; only native review can say how
-much residual error---or apparent agreement---belongs to the silver
-labels.
+transcription. Same-source pairing with date grouping, real-line replay,
+and a fixed dictionary yields a useful internal baseline where
+transcription is scarce; only native review can say how much residual
+error---or apparent agreement---belongs to the silver labels.
 
 \subsubsection{7.2 Non-oracle pages on the held-out
 dates}\label{non-oracle-pages-on-the-held-out-dates}
@@ -609,7 +545,7 @@ resolves the contradiction: 4.329\% codepoint and 6.714\% grapheme CER
 over the identical predictions, with no model retrained and no
 recognized text altered. The mechanism is simple: on a six-column page,
 small vertical offsets make a global y-sort weave columns together, and
-edit distance counts the moved blocks as character errors. For RQ2, the
+edit distance counts the moved blocks as character errors. The
 catastrophic-looking number was mainly an inconsistent sequence
 definition; the remaining error belongs to recognition, missing and
 extra lines, crop quality, and layout generalization. Every page score
@@ -629,7 +565,7 @@ codepoints while the page itself is visibly Sirijonga---so the real task
 is Sirijonga pixels to Devanagari transcription, not Devanagari OCR. A
 surviving 31-crop diagnostic is therefore evidence about cross-script
 transcription, and its lost scoring bundle is a second reason to exclude
-it from the verified tables. Operationally (RQ3): manifests store
+it from the verified tables. Operationally: manifests store
 \texttt{language}, \texttt{visual\_script}, \texttt{source\_encoding},
 and \texttt{transcription\_encoding} separately, \texttt{deva-v2} is
 called a generic runtime route, and a Limbu-specific Devanagari result
@@ -641,7 +577,7 @@ metric}\label{review-burden-is-the-next-system-metric}
 None of the recognition scores says how long a book takes to correct.
 Low average CER can coexist with missing headings, confidently wrong
 lines, or an interface that forces the editor back to the source page
-for every error. The RQ4 study should measure lines routed to review,
+for every error. The needed study measures lines routed to review,
 missing and extra lines, correction time per page and per thousand
 characters, accuracy after bounded review, and the share of a book
 needing resegmentation---review burden, rather than CER alone, decides
@@ -678,7 +614,7 @@ most entries below have not cleared those gates.
 
 \begin{figure}
 \centering
-\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio]{figures/language-pack-status.png}
+\includegraphics[width=0.88\linewidth,height=\textheight,keepaspectratio]{figures/language-pack-status.png}
 \caption{Real-print and silver line substrate per script, with pipeline
 status. Counts are read from the recorded pack artifacts at figure-build
 time. All rows are mechanical silver or diagnostic substrate, not
@@ -883,9 +819,8 @@ starting point: Sirijonga labels need native validation,
 Devanagari-written Limbu needs verified pages of its own, and every
 other language remains behind its rights and review gates. The
 serialization correction and the withdrawn curriculum result show why
-these boundaries belong in the method rather than a footnote. The next
-meaningful measure is review burden on a complete book---how much time
-the system saves while keeping missed text and uncertain lines visible.
+these boundaries belong in the method, and the next meaningful measure
+is review burden on a complete book.
 
 \phantomsection\label{refs}
 \begin{CSLReferences}{1}{0}
